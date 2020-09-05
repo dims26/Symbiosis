@@ -1,0 +1,23 @@
+{
+  "name": "symbiosis",
+  "version": "1.0.0",
+  "description": "Internal social network for employees",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "nodemon --exec babel-node src/server.js",
+    "build": "babel src --out-dir dist",
+    "serve": "node dist/server.js"
+  },
+  "author": "Adedimeji Sebiotimo",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/cli": "^7.11.6",
+    "@babel/core": "^7.11.6",
+    "@babel/node": "^7.10.5",
+    "@babel/preset-env": "^7.11.5",
+    "nodemon": "^2.0.4"
+  },
+  "dependencies": {
+    "mongodb": "^3.6.1"
+  }
+}
