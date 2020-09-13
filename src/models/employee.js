@@ -5,8 +5,7 @@ const employeeName = 'employee';
 const emplSchema = {
   $jsonSchema: {
     bsonType: 'object',
-    additionalProperties: false,
-    required: ['name', 'email', 'department'],
+    required: ['name', 'email', 'department', 'type'],
     properties: {
       _id: {
         bsonType: 'objectId',
@@ -23,6 +22,14 @@ const emplSchema = {
       department: {
         bsonType: 'string',
         description: 'must be a string and is required',
+      },
+      type: {
+        enum: ['admin', 'regular'],
+        description: 'can only be one of the enum values and is required',
+      },
+      password: {
+        bsonType: 'string',
+        description: 'must be a string and is not required',
       },
     },
   },
