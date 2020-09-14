@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Internal social network for employees",
   "main": "src/server.js",
+  "type": "module",
   "scripts": {
     "start": "nodemon --exec babel-node src/server.js",
     "build": "babel src --out-dir dist",
@@ -18,9 +19,14 @@
     "nodemon": "^2.0.4"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.19.0",
     "eslint": "^7.8.1",
     "eslint-config-airbnb-base": "^14.2.0",
     "eslint-plugin-import": "^2.22.0",
-    "mongodb": "^3.6.1"
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongodb": "^3.6.1",
+    "mongojs": "^3.1.0"
   }
 }
