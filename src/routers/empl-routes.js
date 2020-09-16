@@ -1,16 +1,12 @@
-import expressPkg from 'express';
-import bodyParser from 'body-parser';
+/* eslint-disable no-underscore-dangle */
+/* eslint-disable import/extensions */
 import mongoPkg from 'mongodb';
 import collPromise from '../models/employee.js';
 import verifyToken, { signToken, checkPassword, hashPassword } from '../middleware/auth.js';
+import baseRouter from './base-routes.js';
 
-const { Router } = expressPkg;
-const { urlencoded, json } = bodyParser;
 const { ObjectId } = mongoPkg;
-const router = Router();
-
-router.use(json());
-router.use(urlencoded({ extended: true }));
+const router = baseRouter();
 
 function login(expressRouter, collection) {
   expressRouter.post('/login', (req, res) => {
@@ -51,11 +47,10 @@ function login(expressRouter, collection) {
   });
 }
 
-function add(expressRouter, collection) {
-  expressRouter.post('/add', verifyToken, (req, res) => {
+function addNewUser(expressRouter, collection) {
+  expressRouter.post('/', verifyToken, (req, res) => {
     // search for requester in database
     collection.findOne({ _id: ObjectId(req.userId), type: 'admin' }).then((result) => {
-      console.log(req.userId);
       if (!result) {
         return res.status(401).json({
           status: res.statusCode,
@@ -67,7 +62,7 @@ function add(expressRouter, collection) {
       let employeeType;
       if (req.body.isAdmin === 'true') employeeType = 'admin';
       else employeeType = 'regular';
-      collection.insertOne({
+      return collection.insertOne({
         name: req.body.name.toString(),
         email: req.body.email.toString(),
         department: req.body.department.toString(),
@@ -78,7 +73,6 @@ function add(expressRouter, collection) {
           return res.status(500).json({
             status: res.statusCode,
             error: 'There was a problem adding the user to the database.',
-            detail: err,
           });
         }
         return res.status(200).json({
@@ -118,7 +112,7 @@ function getAllUsers(expressRouter, collection) {
 export default async function getRouter() {
   const emplCollection = await collPromise();
   // create a new user
-  add(router, emplCollection);
+  addNewUser(router, emplCollection);
   // Employee login
   login(router, emplCollection);
 
