@@ -1,16 +1,20 @@
+/* eslint-disable camelcase */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable import/extensions */
 import mongoPkg from 'mongodb';
-import collPromise, { urlRegex } from '../models/post.js';
+import collPromise from '../models/post.js';
 import verifyToken from '../middleware/auth.js';
+import multerUploads, { dataUri } from '../middleware/multer.js';
 import baseRouter from './base-routes.js';
+import { uploader } from '../cloudinaryConfig.js';
 
 const { ObjectId } = mongoPkg;
 const router = baseRouter();
+const maxGIFSize = 3147000;
 
 function addNewPost(expressRouter, collection) {
-  expressRouter.post('/', verifyToken, (req, res) => {
-    const isGif = (typeof req.body.gifLink === 'string' && req.body.gifLink.match(urlRegex));
+  expressRouter.post('/', verifyToken, multerUploads, async (req, res) => {
+    const isGif = (req.file);
     const isArticle = (typeof req.body.article === 'string' && req.body.article.length > 0);
     const postType = isGif ? 'gif' : 'article';
     const insert = {
@@ -19,30 +23,67 @@ function addNewPost(expressRouter, collection) {
       tags: [...new Set(req.body.tags)],
       type: postType,
     };
-    if (isGif) insert.gif_link = req.body.gifLink;
-    else if (isArticle) insert.body = req.body.article;
-    else {
+    const saveToDb = () => {
+      collection.insertOne(insert, (err, insertResult) => {
+        if (err) {
+          return res.status(500).json({
+            status: res.statusCode,
+            error: `There was a problem posting ${postType}.`,
+          });
+        }
+        return res.status(200).json({
+          status: res.statusCode,
+          message: `${postType} posted successfully`,
+          data: {
+            id: insertResult.insertedId,
+          },
+        });
+      });
+    };
+    if (isGif) {
+      console.log(req.file);
+      // upload image to storage bucket
+      if (req.file.size > maxGIFSize) {
+        return res.status(413).json({
+          status: res.statusCode,
+          error: `GIF size should not exceed ${maxGIFSize / 1000} mebibytes`,
+        });
+      }
+      if (req.file.mimetype !== 'image/gif') {
+        return res.status(415).json({
+          status: res.statusCode,
+          error: 'GIF type required',
+        });
+      }
+      const transformation = {
+        width: 480,
+        crop: 'scale',
+        fetch_format: 'auto',
+        flags: 'lossy',
+        folder: `symbiosis/posts/${req.userId}/`,
+      };
+      const file = dataUri(req).content;
+      uploader.upload(file, transformation).then((cRes) => {
+        insert.gif_link = cRes.secure_url;
+        console.log(cRes.secure_url);
+        return saveToDb();
+      }).catch((cErr) => {
+        const { http_code } = cErr;
+        return res.status(http_code).json({
+          status: http_code,
+          error: 'Upload error',
+        });
+      });
+    } else if (isArticle) {
+      insert.body = req.body.article;
+      return saveToDb();
+    } else {
       return res.status(400).json({
         status: res.statusCode,
         error: 'Invalid request',
       });
     }
-    return collection.insertOne(insert, (err, insertResult) => {
-      if (err) {
-        console.log(err);
-        return res.status(500).json({
-          status: res.statusCode,
-          error: `There was a problem posting ${postType}.`,
-        });
-      }
-      return res.status(200).json({
-        status: res.statusCode,
-        message: `${postType} posted successfully`,
-        data: {
-          id: insertResult.insertedId,
-        },
-      });
-    });
+    return null;
   });
 }
 
@@ -126,10 +167,16 @@ function deletePost(expressRouter, collection) {
 
 function getPosts(expressRouter, collection) {
   expressRouter.get('/', verifyToken, (req, res) => {
+    const isTagQueryPresent = (typeof req.query.tag === 'string' && req.query.tag.toString().length > 0);
     const pageSize = 10;
     let page = (parseInt(req.query.from, 10) || 1);
     if (page < 1) page = 1;
-    collection.find({}, {
+    const query = {};
+    if (isTagQueryPresent) {
+      query.tags = req.query.tag;
+    }
+    console.log(query);
+    collection.find(query, {
       limit: pageSize + 1,
       skip: (page - 1) * pageSize,
     }).toArray((err, users) => {
@@ -152,6 +199,7 @@ function getPosts(expressRouter, collection) {
         tags: post.tags,
         post_type: post.type,
       }));
+      console.log(users);
       return res.status(200).json({
         status: res.statusCode,
         message: 'Request successful',
@@ -206,7 +254,7 @@ function markInappropriatePost(expressRouter, collection) {
     collection.updateOne({ _id: ObjectId(req.params.id) },
       {
         $addToSet: {
-          inappropriate_by: req.userId,
+          inappropriate_by: ObjectId(req.userId),
         },
       }, (updateErr, result) => {
         if (updateErr) {

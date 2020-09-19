@@ -1,3 +1,4 @@
+/* eslint-disable import/extensions */
 import {} from 'dotenv/config.js';
 import app from './app.js';
 

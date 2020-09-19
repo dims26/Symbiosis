@@ -3,7 +3,7 @@ import database, { getCollection } from '../db/db.js';
 
 let coll;
 // eslint-disable-next-line no-useless-escape
-export const urlRegex = '(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)';
+export const urlRegex = '(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/\/=]*)';
 const dbName = process.env.DB_NAME;
 const postName = process.env.DB_POST_COLLECTION_NAME;
 const postSchema = {
@@ -52,6 +52,14 @@ const postSchema = {
       type: {
         enum: ['article', 'gif'],
         description: 'can only be one of the enum values and is required',
+      },
+      inappropriate_by: {
+        bsonType: ['array'],
+        minItems: 0,
+        additionalProperties: false,
+        items: {
+          bsonType: ['objectId'],
+        },
       },
     },
   },
