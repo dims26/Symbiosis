@@ -1,7 +1,8 @@
 import database, { getCollection } from '../db/db.js';
 
 let coll;
-const employeeName = 'employee';
+const dbName = process.env.DB_NAME;
+const employeeName = process.env.DB_EMPLOYEE_COLLECTION_NAME;
 const emplSchema = {
   $jsonSchema: {
     bsonType: 'object',
@@ -37,7 +38,7 @@ const emplSchema = {
 
 const employeeCollection = async () => {
   if (!coll) {
-    const db = await database('symbiosis-db');
+    const db = await database(dbName);
     coll = await getCollection(employeeName);
     db.listCollections({ name: employeeName }).hasNext((err, res) => {
       if (!res) {

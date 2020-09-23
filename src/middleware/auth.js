@@ -2,7 +2,7 @@ import jwtPkg from 'jsonwebtoken'; // used to create, sign, and verify tokens
 import bcrypt from 'bcryptjs';
 
 const { verify, sign } = jwtPkg;
-const secret = 'WeJapaProject';
+const secret = process.env.JWT_SECRET;
 
 export default function verifyToken(req, res, next) {
   // check header or url parameters or post parameters for token
@@ -10,13 +10,12 @@ export default function verifyToken(req, res, next) {
   if (!token) { return res.status(403).json({ status: res.statusCode, error: 'No token provided.' }); }
 
   // verifies secret and checks exp
-  verify(token, secret, (err, decoded) => {
+  return verify(token, secret, (err, decoded) => {
     if (err) { return res.status(500).json({ status: res.statusCode, error: 'Failed to authenticate token.' }); }
 
     // if everything is good, save to request for use in other routes
     req.userId = decoded.id;
-    console.log(decoded.id);
-    next();
+    return next();
   });
 }
 

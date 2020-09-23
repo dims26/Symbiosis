@@ -1,13 +1,14 @@
 import mongoPkg from 'mongodb';
 
 const { MongoClient } = mongoPkg;
-const dbName = 'symbiosis-db';
+const dbName = process.env.DB_NAME;
 let db;
 
-// if (!process.env.MONGO_CONNECTION_STRING) {
-//   throw new Error('Environment variable MONGO_CONNECTION_STRING must be set to use API.');
-// }
-const client = MongoClient.connect('mongodb://localhost:27017/symbiosis-db', { useUnifiedTopology: true });
+if (!process.env.MONGO_CONNECTION_STRING) {
+  throw new Error('Environment variable MONGO_CONNECTION_STRING must be set to use API.');
+}
+const client = MongoClient.connect(process.env.MONGO_CONNECTION_STRING,
+  { useUnifiedTopology: true });
 
 /**
  * Returns a promise of a `db` object. Subsequent calls to this function returns
